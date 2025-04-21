@@ -2,9 +2,12 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { getsession } from "@/auth";
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+interface RouteContext {
+    params: Promise<{ id: string }>;
+}
+export async function PUT(request: Request, context: RouteContext) {
     const session = await getsession();
-    const { id: paramid } = await params
+    const { id: paramid } = await context.params
     if (!session?.user?.id) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -33,9 +36,9 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, context: RouteContext) {
     const session = await getsession();
-    const { id: paramid } = await params
+    const { id: paramid } = await context.params
     if (!session?.user?.id) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
