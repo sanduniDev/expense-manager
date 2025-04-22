@@ -1,18 +1,18 @@
-import { test, expect } from '@playwright/test';
-import { LoginPage } from '../pages/loginPage';
-import { BudgetPage } from '../pages/budgetPage';
+import {test, expect} from '@playwright/test';
+import {LoginPage} from '../pages/loginPage';
+import {BudgetPage} from '../pages/budgetPage';
 
 test.describe('Budget Page Tests', () => {
     let loginPage: LoginPage;
     let budgetPage: BudgetPage;
 
-    test.beforeEach(async ({ page }) => {
+    test.beforeEach(async ({page}) => {
         loginPage = new LoginPage(page);
         budgetPage = new BudgetPage(page);
 
         await loginPage.navigateToLoginPage();
         await loginPage.login('already.registered@example.com', 'securePassword123');
-        await page.waitForURL('**/dashboard', { waitUntil: "networkidle" });
+        await page.waitForURL('**/dashboard', {waitUntil: "networkidle"});
         await budgetPage.navigateToBudgetPage();
     });
     test.describe('1.1 - Navigation Tests', () => {
@@ -43,17 +43,18 @@ test.describe('Budget Page Tests', () => {
             expect(await budgetPage.page.textContent('form')).toContain('Please select a period');
         });
         test('1.2.3 - Verify budget creation with valid data', async () => {
+            const currentTotalBudget = await budgetPage.getSummaryBoxValue(budgetPage.totalBudgetTestID)
             await budgetPage.clickAddBudgetButton();
             await budgetPage.fillBudgetForm('Housing', '200000', 'Monthly');
             await budgetPage.saveBudget();
 
             await budgetPage.waitForToast('Budget created successfully');
 
-            (await budgetPage.getDialog('New Budget')).waitFor({ state: 'hidden' })
+            (await budgetPage.getDialog('New Budget')).waitFor({state: 'hidden'})
 
             expect(await budgetPage.isBudgetCardVisible(budgetPage.homeBudgetText)).toBeTruthy();
-            const totalBudget = await budgetPage.getSummaryBoxText(budgetPage.totalBudgetTestID);
-            expect(totalBudget).toContain('$200000.00');
+            const newTotalBudget = await budgetPage.getSummaryBoxValue(budgetPage.totalBudgetTestID);
+            expect(newTotalBudget).toEqual(currentTotalBudget + 200000)
 
             await budgetPage.deleteBudgetIfExists("Housing")
         });
@@ -63,21 +64,24 @@ test.describe('Budget Page Tests', () => {
 
         test('1.3.1 - Verify budget editing with valid data', async () => {
             // Create new budget for Food
+            const currentTotalBudget = await budgetPage.getSummaryBoxValue(budgetPage.totalBudgetTestID);
             await budgetPage.clickAddBudgetButton();
             await budgetPage.fillBudgetForm('Food', '150000', 'Monthly');
             await budgetPage.saveBudget();
 
             await budgetPage.waitForToast('Budget created successfully');
-            (await budgetPage.getDialog('New Budget')).waitFor({ state: 'hidden' });
+            (await budgetPage.getDialog('New Budget')).waitFor({state: 'hidden'});
 
             expect(await budgetPage.isBudgetCardVisible(budgetPage.foodBudgetText)).toBeTruthy();
+            const newTotalBudget = await budgetPage.getSummaryBoxValue(budgetPage.totalBudgetTestID);
+            expect(newTotalBudget).toEqual(currentTotalBudget + 150000)
 
             await budgetPage.editBudget(await budgetPage.getBudgetCardUpdateSelector('Food'), '250000');
             await budgetPage.waitForToast('Budget updated successfully');
-            (await budgetPage.getDialog('Edit Budget')).waitFor({ state: 'hidden' })
+            (await budgetPage.getDialog('Edit Budget')).waitFor({state: 'hidden'})
 
-            const totalBudget = await budgetPage.getSummaryBoxText(budgetPage.totalBudgetTestID);
-            expect(totalBudget).toContain('$250000.00');
+            const finalTotalBudget = await budgetPage.getSummaryBoxValue(budgetPage.totalBudgetTestID);
+            expect(finalTotalBudget).toEqual(currentTotalBudget + 250000)
 
             await budgetPage.deleteBudgetIfExists("Food")
         });
@@ -87,22 +91,27 @@ test.describe('Budget Page Tests', () => {
 
     test.describe("1.4 - Delete Tests", () => {
         test('1.4.1 - Verify that the user can delete a budget successfully', async () => {
+
+            const currentTotalBudget = await budgetPage.getSummaryBoxValue(budgetPage.totalBudgetTestID);
             await budgetPage.clickAddBudgetButton();
             await budgetPage.fillBudgetForm('Transport', '100000', 'Monthly');
             await budgetPage.saveBudget();
 
             await budgetPage.waitForToast('Budget created successfully');
-            (await budgetPage.getDialog('New Budget')).waitFor({ state: 'hidden' });
+            (await budgetPage.getDialog('New Budget')).waitFor({state: 'hidden'});
 
             expect(await budgetPage.isBudgetCardVisible(budgetPage.transportBudgetText)).toBeTruthy();
+            const newTotalBudget = await budgetPage.getSummaryBoxValue(budgetPage.totalBudgetTestID);
+            expect(newTotalBudget).toEqual(currentTotalBudget + 100000)
             budgetPage.deleteBudget(await budgetPage.getBudgetCardDeleteSelector('Transport'));
             await budgetPage.waitForToast('Budget deleted successfully')
             expect(await budgetPage.isAvailable(await budgetPage.getBudgetCardSelector('Transport'))).toBe(false);
 
-            const totalBudget = await budgetPage.getSummaryBoxText(budgetPage.totalBudgetTestID);
-            expect(totalBudget).toContain('$0.00');
+            const totalBudget = await budgetPage.getSummaryBoxValue(budgetPage.totalBudgetTestID);
+            expect(totalBudget).toEqual(currentTotalBudget);
 
             await budgetPage.deleteBudgetIfExists("Transport")
         });
     });
+
 });

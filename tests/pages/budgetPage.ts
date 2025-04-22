@@ -1,5 +1,5 @@
-import { Page } from '@playwright/test';
-import { BasePage } from './basePage';
+import {Page} from '@playwright/test';
+import {BasePage} from './basePage';
 
 export class BudgetPage extends BasePage {
     readonly addBudgetButtonSelector = 'button:has-text("Add Budget")';
@@ -26,12 +26,15 @@ export class BudgetPage extends BasePage {
     async getBudgetCardSelector(selector: string) {
         return `[data-slot="card-title"]:has-text("${selector}")`
     }
+
     async getBudgetCardUpdateSelector(selector: string) {
         return `[data-slot="card-title"]:has-text("${selector}") ~ div button:has(svg.lucide-pen)`
     }
+
     async getBudgetCardDeleteSelector(selector: string) {
         return `[data-slot="card-title"]:has-text("${selector}") ~ div button:has(svg.lucide-trash2)`
     }
+
     async navigateToBudgetPage() {
         await this.navigate('/dashboard/budgets');
         await this.waitForNetwork();
@@ -57,6 +60,7 @@ export class BudgetPage extends BasePage {
         await this.clickElement(this.saveBudgetButtonSelector);
         await this.waitForNetwork();
     }
+
     async updateBudget() {
         await this.clickElement(this.updateBudgetButtonSelector);
         await this.waitForNetwork()
@@ -67,6 +71,7 @@ export class BudgetPage extends BasePage {
         await this.fillInput(this.amountInputSelector, amount);
         await this.updateBudget();
     }
+
     async deleteBudget(selector: string) {
         await this.clickElement(selector);
         await this.page.waitForSelector(this.deleteBudgetConfirmButtonSelector);
@@ -75,12 +80,14 @@ export class BudgetPage extends BasePage {
     }
 
     async isBudgetCardVisible(cardName: string) {
-        await this.page.locator(await this.getBudgetCardSelector(cardName)).waitFor({ state: 'visible' });
+        await this.page.locator(await this.getBudgetCardSelector(cardName)).waitFor({state: 'visible'});
         return await this.page.locator(await this.getBudgetCardSelector(cardName)).isVisible
     }
 
-    async getSummaryBoxText(selector: string) {
-        return (await this.getByTestId(selector)).textContent();
+    async getSummaryBoxValue(selector: string): Promise<number> {
+        const textcontent = await (await this.getByTestId(selector)).textContent();
+        const match = textcontent?.match(/\$(\d+(\.\d+)?)/);
+        return match ? parseFloat(match[1]) : 0;
     }
 
     async deleteBudgetIfExists(budget: string) {
